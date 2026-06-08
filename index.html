@@ -11,7 +11,7 @@
       --verde2:   #00d000;
       --amarelo:  #fab919;
       --azul:     #183eff;
-      --vermelho: #42ddeb;
+      --vermelho: #ff0000;
       --branco:   #ffffff;
       --cinza-bg: #f4f4f4;
       --borda:    #e0e0e0;
@@ -91,13 +91,11 @@
       transition: transform .18s, box-shadow .18s;
     }
     .region-tabs button:hover { transform: translateY(-1px); }
-    .region-tabs button.active {
-      box-shadow: 0 0 0 2.5px #111 inset;
-    }
+    .region-tabs button.active { box-shadow: 0 0 0 2.5px #111 inset; }
 
     .btn-norte    { background: #009600; color: #fff; }
     .btn-nordeste { background: #00d000; color: #111; }
-    .btn-centro   { background: #42ddeb; color: #000000; }
+    .btn-centro   { background: #ff0000; color: #fff; }
     .btn-sudeste  { background: #fab919; color: #111; }
     .btn-sul      { background: #183eff; color: #fff; }
 
@@ -110,14 +108,8 @@
     }
 
     /* ── MAPA ── */
-    .map-area {
-      width: 100%;
-    }
-    #map {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
+    .map-area { width: 100%; }
+    #map { width: 100%; height: auto; display: block; }
 
     .state {
       cursor: pointer;
@@ -126,7 +118,7 @@
     .state:hover  { filter: brightness(1.12); }
     .state.dimmed { opacity: .18; pointer-events: none; }
     .state.selected {
-      stroke: #ffffff !important;
+      stroke: #fff !important;
       stroke-width: 2.8 !important;
       filter: drop-shadow(0 0 7px rgba(0,0,0,.28));
     }
@@ -141,11 +133,7 @@
     }
 
     /* ── CARDS ── */
-    .cards {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
+    .cards { display: flex; flex-direction: column; gap: 20px; }
 
     .card {
       background: #fff;
@@ -200,12 +188,8 @@
     }
 
     /* ── RODAPÉ ── */
-    .rodape {
-      width: 100%;
-    }
-    .rodape img {
-      width: 100%; height: auto; display: block;
-    }
+    .rodape { width: 100%; }
+    .rodape img { width: 100%; height: auto; display: block; }
     .rodape-placeholder {
       width: 100%;
       height: 100px;
@@ -270,10 +254,8 @@
     <img src="topo-placeholder.jpg" alt="CNH do Brasil — 1.336.123 CNHs emitidas">
   </div>
 
-  <!-- ══ CORPO ══ -->
   <div class="corpo">
 
-    <!-- TABS -->
     <div class="region-tabs" id="filters">
       <button class="btn-norte    active" data-region="norte">Norte</button>
       <button class="btn-nordeste"         data-region="nordeste">Nordeste</button>
@@ -282,7 +264,6 @@
       <button class="btn-sul"              data-region="sul">Sul</button>
     </div>
 
-    <!-- MAPA + CARDS -->
     <div class="main">
 
       <div class="map-area">
@@ -297,39 +278,30 @@
           <div class="card-titulo">Estado</div>
           <div class="card-linha"></div>
           <div class="card-nome" id="state-name">São Paulo</div>
-          <div class="card-valor" id="state-valor">
-            336.648<small>CNHs emitidas</small>
-          </div>
+          <div class="card-valor" id="state-valor">336.648<small>CNHs emitidas</small></div>
         </div>
 
         <div class="card">
           <div class="card-titulo">Região</div>
           <div class="card-linha"></div>
           <div class="card-nome" id="region-name">Sudeste</div>
-          <div class="card-valor" id="region-valor">
-            535.636<small>CNHs emitidas</small>
-          </div>
+          <div class="card-valor" id="region-valor">535.636<small>CNHs emitidas</small></div>
         </div>
       </div>
 
-    </div><!-- /main -->
+    </div>
 
-  </div><!-- /corpo -->
-
-  <!-- ══ RODAPÉ ══
-       Para usar sua imagem: substitua o bloco abaixo por
-       <img src="rodape.png" alt="Governo do Brasil">
-  -->
-  <div class="rodape">
-       <img src="rodape.jpg" alt="Governo do Brasil">
   </div>
 
-</div><!-- /dashboard -->
+  <div class="rodape">
+    <img src="rodape.jpg" alt="Governo do Brasil">
+  </div>
+
+</div>
 
 <div id="tooltip"></div>
 
 <script>
-/* ════════ DADOS ════════ */
 const estadosDados = {
   AC:{ estado:"Acre",                 regiao:"norte",    valor:8371   },
   AL:{ estado:"Alagoas",             regiao:"nordeste", valor:19595  },
@@ -360,7 +332,6 @@ const estadosDados = {
   TO:{ estado:"Tocantins",           regiao:"norte",    valor:13954  },
 };
 
-/* regiao_id do GeoJSON (1=Sul 2=Sudeste 3=Norte 4=Nordeste 5=Centro-Oeste) */
 const regiaoIdMap = { "1":"sul","2":"sudeste","3":"norte","4":"nordeste","5":"centro" };
 
 const totaisRegiao = {
@@ -371,14 +342,13 @@ const nomesRegiao = {
   sudeste:"Sudeste", sul:"Sul"
 };
 const coresRegiao = {
-  norte:"#009600", nordeste:"#00d000", centro:"#42ddeb",
+  norte:"#009600", nordeste:"#00d000", centro:"#ff0000",
   sudeste:"#fab919", sul:"#183eff"
 };
 
 let ufSelecionada = "SP";
 let regiaoAtiva   = "sudeste";
 
-/* ════════ UTILITÁRIOS ════════ */
 function fmt(n){ return n.toLocaleString("pt-BR"); }
 
 function atualizarCards(uf){
@@ -402,7 +372,6 @@ function aplicarFiltro(regiao){
   });
 }
 
-/* ════════ TOOLTIP ════════ */
 const tt = document.getElementById("tooltip");
 function showTT(e,uf){
   const d = estadosDados[uf]; if(!d) return;
@@ -416,18 +385,20 @@ function moveTT(e){
 }
 function hideTT(){ tt.classList.remove("vis"); }
 
-/* ════════ MAPA ════════ */
 async function desenharMapa(){
   const svg = d3.select("#map");
   const W=900, H=780;
 
   let geojson;
   try {
-    geojson = await d3.json("brazil-states.geojson");
+    /* Caminho robusto — funciona na raiz e em subpastas do GitHub Pages */
+    const base = window.location.href.replace(/\/[^/]*$/, '/');
+    geojson = await d3.json(base + "brazil-states.geojson");
   } catch(e){
     svg.append("text").attr("x",450).attr("y",390)
       .attr("text-anchor","middle").attr("fill","#aaa").attr("font-size","15")
-      .text("Arquivo brazil-states.geojson não encontrado na mesma pasta.");
+      .text("Arquivo brazil-states.geojson não encontrado.");
+    console.error("Erro GeoJSON:", e);
     return;
   }
 
@@ -436,7 +407,6 @@ async function desenharMapa(){
   const path = d3.geoPath(proj);
   const g = svg.append("g");
 
-  /* paths */
   g.selectAll("path.state")
     .data(features).enter().append("path")
     .attr("class","state")
@@ -462,7 +432,6 @@ async function desenharMapa(){
       hideTT();
     });
 
-  /* labels */
   g.selectAll("text.state-label")
     .data(features).enter().append("text")
     .attr("class","state-label")
@@ -470,19 +439,16 @@ async function desenharMapa(){
     .attr("y", d => path.centroid(d)[1])
     .text(d => d.properties.sigla||"");
 
-  /* estado inicial */
   aplicarFiltro("sudeste");
   atualizarCards("SP");
   d3.select('.state[data-uf="SP"]').classed("selected",true);
 }
 
-/* ════════ EVENTOS TABS ════════ */
 document.getElementById("filters").addEventListener("click", e => {
   const btn = e.target.closest("button[data-region]");
   if(!btn) return;
   const reg = btn.dataset.region;
   aplicarFiltro(reg);
-  /* seleciona o maior estado da região */
   const top = Object.entries(estadosDados)
     .filter(([,v])=>v.regiao===reg)
     .sort((a,b)=>b[1].valor-a[1].valor)[0];
