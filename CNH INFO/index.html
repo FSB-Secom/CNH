@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CNH do Brasil — Emissões por Estado</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    :root {
+      --verde:    #009600;
+      --verde2:   #00d000;
+      --amarelo:  #fab919;
+      --azul:     #183eff;
+      --vermelho: #42ddeb;
+      --branco:   #ffffff;
+      --cinza-bg: #f4f4f4;
+      --borda:    #e0e0e0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #fff;
+      color: #111;
+    }
+
+    .dashboard {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #fff;
+    }
+
+    /* ── CABEÇALHO ── */
+    .topo {
+      width: 100%;
+      line-height: 0;
+    }
+    .topo img {
+      width: 100%; height: auto; display: block;
+    }
+    .topo-placeholder {
+      width: 100%;
+      height: 140px;
+      background: repeating-linear-gradient(
+        45deg,
+        #f0f0f0 0, #f0f0f0 10px,
+        #e8e8e8 10px, #e8e8e8 20px
+      );
+      border: 2px dashed #ccc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .topo-placeholder span {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #aaa;
+    }
+    .topo-placeholder small {
+      font-size: 11px;
+      color: #bbb;
+    }
+
+    /* ── CORPO ── */
+    .corpo {
+      padding: 36px 40px 40px;
+      background: #fff;
+    }
+
+    /* ── TABS ── */
+    .region-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 9px;
+      margin-bottom: 28px;
+    }
+    .region-tabs button {
+      border: none;
+      border-radius: 9px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform .18s, box-shadow .18s;
+    }
+    .region-tabs button:hover { transform: translateY(-1px); }
+    .region-tabs button.active {
+      box-shadow: 0 0 0 2.5px #111 inset;
+    }
+
+    .btn-norte    { background: #009600; color: #fff; }
+    .btn-nordeste { background: #00d000; color: #111; }
+    .btn-centro   { background: #42ddeb; color: #000000; }
+    .btn-sudeste  { background: #fab919; color: #111; }
+    .btn-sul      { background: #183eff; color: #fff; }
+
+    /* ── GRID MAPA + CARDS ── */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 32px;
+      align-items: center;
+    }
+
+    /* ── MAPA ── */
+    .map-area {
+      width: 100%;
+    }
+    #map {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .state {
+      cursor: pointer;
+      transition: opacity .18s, filter .18s;
+    }
+    .state:hover  { filter: brightness(1.12); }
+    .state.dimmed { opacity: .18; pointer-events: none; }
+    .state.selected {
+      stroke: #ffffff !important;
+      stroke-width: 2.8 !important;
+      filter: drop-shadow(0 0 7px rgba(0,0,0,.28));
+    }
+    .state-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      fill: rgba(0,0,0,.6);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* ── CARDS ── */
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border: 2px solid var(--borda);
+      border-radius: 22px;
+      padding: 22px 24px 26px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-height: 180px;
+    }
+
+    .card-titulo {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--verde);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .card-linha {
+      width: 100%;
+      height: 3px;
+      background: var(--verde);
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    .card-nome {
+      font-size: 20px;
+      font-weight: 400;
+      color: #333;
+      line-height: 1.15;
+      margin-bottom: 10px;
+      min-height: 28px;
+    }
+
+    .card-valor {
+      font-size: 58px;
+      font-weight: 900;
+      color: var(--verde);
+      line-height: .9;
+      letter-spacing: -2px;
+    }
+    .card-valor small {
+      display: block;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0;
+      margin-top: 5px;
+      color: #333;
+    }
+
+    /* ── RODAPÉ ── */
+    .rodape {
+      width: 100%;
+    }
+    .rodape img {
+      width: 100%; height: auto; display: block;
+    }
+    .rodape-placeholder {
+      width: 100%;
+      height: 100px;
+      background: repeating-linear-gradient(
+        45deg,
+        #f0f0f0 0, #f0f0f0 10px,
+        #e8e8e8 10px, #e8e8e8 20px
+      );
+      border: 2px dashed #ccc;
+      border-top: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .rodape-placeholder span {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #aaa;
+    }
+
+    /* ── TOOLTIP ── */
+    #tooltip {
+      position: fixed;
+      background: rgba(0,0,0,.82);
+      color: #fff;
+      padding: 8px 13px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .12s;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+    #tooltip.vis { opacity: 1; }
+
+    /* ── RESPONSIVO ── */
+    @media (max-width: 780px) {
+      .corpo { padding: 24px 20px 28px; }
+      .main  { grid-template-columns: 1fr; gap: 24px; }
+      .cards { flex-direction: row; }
+      .card  { flex: 1; min-height: auto; }
+      .card-valor { font-size: 40px; }
+    }
+    @media (max-width: 520px) {
+      .cards { flex-direction: column; }
+      .card-titulo { font-size: 24px; }
+      .card-valor  { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <div class="topo">
+    <img src="topo-placeholder.jpg" alt="CNH do Brasil — 1.336.123 CNHs emitidas">
+  </div>
+
+  <!-- ══ CORPO ══ -->
+  <div class="corpo">
+
+    <!-- TABS -->
+    <div class="region-tabs" id="filters">
+      <button class="btn-norte    active" data-region="norte">Norte</button>
+      <button class="btn-nordeste"         data-region="nordeste">Nordeste</button>
+      <button class="btn-centro"           data-region="centro">Centro-Oeste</button>
+      <button class="btn-sudeste"          data-region="sudeste">Sudeste</button>
+      <button class="btn-sul"              data-region="sul">Sul</button>
+    </div>
+
+    <!-- MAPA + CARDS -->
+    <div class="main">
+
+      <div class="map-area">
+        <svg id="map"
+             viewBox="0 0 900 780"
+             preserveAspectRatio="xMidYMid meet"
+             aria-label="Mapa do Brasil — CNHs emitidas por estado"></svg>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="card-titulo">Estado</div>
+          <div class="card-linha"></div>
+          <div class="card-nome" id="state-name">São Paulo</div>
+          <div class="card-valor" id="state-valor">
+            336.648<small>CNHs emitidas</small>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-titulo">Região</div>
+          <div class="card-linha"></div>
+          <div class="card-nome" id="region-name">Sudeste</div>
+          <div class="card-valor" id="region-valor">
+            535.636<small>CNHs emitidas</small>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+
+  </div><!-- /corpo -->
+
+  <!-- ══ RODAPÉ ══
+       Para usar sua imagem: substitua o bloco abaixo por
+       <img src="rodape.png" alt="Governo do Brasil">
+  -->
+  <div class="rodape">
+       <img src="rodape.jpg" alt="Governo do Brasil">
+  </div>
+
+</div><!-- /dashboard -->
+
+<div id="tooltip"></div>
+
+<script>
+/* ════════ DADOS ════════ */
+const estadosDados = {
+  AC:{ estado:"Acre",                 regiao:"norte",    valor:8371   },
+  AL:{ estado:"Alagoas",             regiao:"nordeste", valor:19595  },
+  AP:{ estado:"Amapá",               regiao:"norte",    valor:4393   },
+  AM:{ estado:"Amazonas",            regiao:"norte",    valor:17066  },
+  BA:{ estado:"Bahia",               regiao:"nordeste", valor:84299  },
+  CE:{ estado:"Ceará",               regiao:"nordeste", valor:55842  },
+  DF:{ estado:"Distrito Federal",    regiao:"centro",   valor:20210  },
+  ES:{ estado:"Espírito Santo",      regiao:"sudeste",  valor:34361  },
+  GO:{ estado:"Goiás",               regiao:"centro",   valor:42894  },
+  MA:{ estado:"Maranhão",            regiao:"nordeste", valor:22094  },
+  MT:{ estado:"Mato Grosso",         regiao:"centro",   valor:35609  },
+  MS:{ estado:"Mato Grosso do Sul",  regiao:"centro",   valor:18509  },
+  MG:{ estado:"Minas Gerais",        regiao:"sudeste",  valor:97307  },
+  PA:{ estado:"Pará",                regiao:"norte",    valor:60944  },
+  PB:{ estado:"Paraíba",             regiao:"nordeste", valor:27833  },
+  PR:{ estado:"Paraná",              regiao:"sul",      valor:81707  },
+  PE:{ estado:"Pernambuco",          regiao:"nordeste", valor:46891  },
+  PI:{ estado:"Piauí",               regiao:"nordeste", valor:24441  },
+  RJ:{ estado:"Rio de Janeiro",      regiao:"sudeste",  valor:67320  },
+  RN:{ estado:"Rio Grande do Norte", regiao:"nordeste", valor:26698  },
+  RS:{ estado:"Rio Grande do Sul",   regiao:"sul",      valor:93253  },
+  RO:{ estado:"Rondônia",            regiao:"norte",    valor:13670  },
+  RR:{ estado:"Roraima",             regiao:"norte",    valor:3754   },
+  SC:{ estado:"Santa Catarina",      regiao:"sul",      valor:65039  },
+  SP:{ estado:"São Paulo",           regiao:"sudeste",  valor:336648 },
+  SE:{ estado:"Sergipe",             regiao:"nordeste", valor:13421  },
+  TO:{ estado:"Tocantins",           regiao:"norte",    valor:13954  },
+};
+
+/* regiao_id do GeoJSON (1=Sul 2=Sudeste 3=Norte 4=Nordeste 5=Centro-Oeste) */
+const regiaoIdMap = { "1":"sul","2":"sudeste","3":"norte","4":"nordeste","5":"centro" };
+
+const totaisRegiao = {
+  sudeste:535636, nordeste:321114, sul:239999, norte:122152, centro:117222
+};
+const nomesRegiao = {
+  norte:"Norte", nordeste:"Nordeste", centro:"Centro-Oeste",
+  sudeste:"Sudeste", sul:"Sul"
+};
+const coresRegiao = {
+  norte:"#009600", nordeste:"#00d000", centro:"#42ddeb",
+  sudeste:"#fab919", sul:"#183eff"
+};
+
+let ufSelecionada = "SP";
+let regiaoAtiva   = "sudeste";
+
+/* ════════ UTILITÁRIOS ════════ */
+function fmt(n){ return n.toLocaleString("pt-BR"); }
+
+function atualizarCards(uf){
+  if(!uf || !estadosDados[uf]) return;
+  const d = estadosDados[uf];
+  document.getElementById("state-name").textContent  = d.estado;
+  document.getElementById("state-valor").innerHTML   = fmt(d.valor)+"<small>CNHs emitidas</small>";
+  document.getElementById("region-name").textContent = nomesRegiao[d.regiao];
+  document.getElementById("region-valor").innerHTML  = fmt(totaisRegiao[d.regiao])+"<small>CNHs emitidas</small>";
+}
+
+function aplicarFiltro(regiao){
+  regiaoAtiva = regiao;
+  document.querySelectorAll(".region-tabs button").forEach(b =>
+    b.classList.toggle("active", b.dataset.region === regiao)
+  );
+  d3.selectAll(".state").each(function(){
+    const uf  = d3.select(this).attr("data-uf");
+    const reg = estadosDados[uf]?.regiao;
+    d3.select(this).classed("dimmed", reg !== regiao);
+  });
+}
+
+/* ════════ TOOLTIP ════════ */
+const tt = document.getElementById("tooltip");
+function showTT(e,uf){
+  const d = estadosDados[uf]; if(!d) return;
+  tt.textContent = `${d.estado}  —  ${fmt(d.valor)} CNHs`;
+  tt.classList.add("vis"); moveTT(e);
+}
+function moveTT(e){
+  let x = e.clientX+14, y = e.clientY-38;
+  if(x+220>window.innerWidth) x = e.clientX-225;
+  tt.style.left=x+"px"; tt.style.top=y+"px";
+}
+function hideTT(){ tt.classList.remove("vis"); }
+
+/* ════════ MAPA ════════ */
+async function desenharMapa(){
+  const svg = d3.select("#map");
+  const W=900, H=780;
+
+  let geojson;
+  try {
+    geojson = await d3.json("brazil-states.geojson");
+  } catch(e){
+    svg.append("text").attr("x",450).attr("y",390)
+      .attr("text-anchor","middle").attr("fill","#aaa").attr("font-size","15")
+      .text("Arquivo brazil-states.geojson não encontrado na mesma pasta.");
+    return;
+  }
+
+  const features = geojson.features || [];
+  const proj = d3.geoMercator().fitSize([W,H],{type:"FeatureCollection",features});
+  const path = d3.geoPath(proj);
+  const g = svg.append("g");
+
+  /* paths */
+  g.selectAll("path.state")
+    .data(features).enter().append("path")
+    .attr("class","state")
+    .attr("data-uf", d => d.properties.sigla)
+    .attr("d", path)
+    .attr("fill", d => coresRegiao[regiaoIdMap[d.properties.regiao_id]] || "#ccc")
+    .attr("stroke","#fff")
+    .attr("stroke-width", 1.3)
+    .on("mouseenter", function(e,d){
+      const uf = d.properties.sigla;
+      if(estadosDados[uf]?.regiao !== regiaoAtiva) return;
+      showTT(e,uf);
+    })
+    .on("mousemove", moveTT)
+    .on("mouseleave", hideTT)
+    .on("click", function(e,d){
+      const uf = d.properties.sigla;
+      if(!estadosDados[uf] || estadosDados[uf].regiao !== regiaoAtiva) return;
+      ufSelecionada = uf;
+      d3.selectAll(".state").classed("selected",false);
+      d3.select(this).classed("selected",true);
+      atualizarCards(uf);
+      hideTT();
+    });
+
+  /* labels */
+  g.selectAll("text.state-label")
+    .data(features).enter().append("text")
+    .attr("class","state-label")
+    .attr("x", d => path.centroid(d)[0])
+    .attr("y", d => path.centroid(d)[1])
+    .text(d => d.properties.sigla||"");
+
+  /* estado inicial */
+  aplicarFiltro("sudeste");
+  atualizarCards("SP");
+  d3.select('.state[data-uf="SP"]').classed("selected",true);
+}
+
+/* ════════ EVENTOS TABS ════════ */
+document.getElementById("filters").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-region]");
+  if(!btn) return;
+  const reg = btn.dataset.region;
+  aplicarFiltro(reg);
+  /* seleciona o maior estado da região */
+  const top = Object.entries(estadosDados)
+    .filter(([,v])=>v.regiao===reg)
+    .sort((a,b)=>b[1].valor-a[1].valor)[0];
+  if(top){
+    ufSelecionada = top[0];
+    d3.selectAll(".state").classed("selected",false);
+    d3.select(`.state[data-uf="${top[0]}"]`).classed("selected",true);
+    atualizarCards(top[0]);
+  }
+});
+
+desenharMapa();
+</script>
+</body>
+</html>
